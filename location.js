@@ -5,6 +5,7 @@
 //      requires jQuery and Google Maps JS API
 
 if (!locjs) var locjs = {};
+if (!locjs.geo) locjs.geo = {};
 
 /* Services
  -----------------------------------*/
