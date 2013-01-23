@@ -7,17 +7,34 @@
 if (!locjs) var locjs = {};
 if (!locjs.geo) locjs.geo = {};
 
+/* Classes
+ -----------------------------------*/
+
+locjs.geo.location = function() {
+    this.latitude = new Number();
+    this.longitude = new Number();
+    this.postal_code = "";
+    this.city = "";
+    this.state_region = "";
+    this.country = "";
+    this.location_type = "";
+    this.formatted_address = "";
+    this.location_url_format = "";
+    this.raw_input = "";
+}
+
+
 /* Services
  -----------------------------------*/
 
-locjs.geo.geoService = function () {
+locjs.geo.gmapsService = function () {
     var geocoder;
     var map;
 
     // get top category list
     var getGeoData_Error = function (xhr) {
-        processAjaxError(xhr);
-    }
+        locjs.utils.processAjaxError(xhr);
+    };
 
     var getGeoData_Result = function (result) {
         var openHtml = "";
@@ -72,7 +89,7 @@ locjs.geo.geoService = function () {
                         }
                     });
 
-                    var new_location = new geo_location();
+                    var new_location = new locjs.geo.location();
                     new_location.latitude = lat;
                     new_location.longitude = lng;
                     new_location.postal_code = postal_code;
@@ -80,7 +97,7 @@ locjs.geo.geoService = function () {
                     new_location.state_region = state_region;
                     new_location.country = country;
                     new_location.formatted_address = formatted_address;
-                    new_location.user_input = address;
+                    new_location.raw_input = address;
 
                     // callback
                     fn_callback(new_location, command);
@@ -88,7 +105,7 @@ locjs.geo.geoService = function () {
                 } else {
                     console.log("Location not found (" + status + ")");
 
-                    var new_location = new geo_location();
+                    var new_location = new locjs.geo.location();
                     new_location.latitude = 0;
                     new_location.longitude = 0;
                     new_location.postal_code = "";
@@ -96,7 +113,7 @@ locjs.geo.geoService = function () {
                     new_location.state_region = "";
                     new_location.country = "";
                     new_location.formatted_address = "";
-                    new_location.user_input = "";
+                    new_location.raw_input = "";
 
                     // callback
                     fn_callback(new_location, command);
@@ -117,7 +134,7 @@ locjs.geo.geoService = function () {
             userLoc.city = uposition.address.city;
             userLoc.country = uposition.address.country_code;
             userLoc.state_region = uposition.address.region;
-        };
+        }
 
         return userLoc;
     }
@@ -169,26 +186,12 @@ locjs.geo.geoService = function () {
                         }
                     });
 
-                    /*
-                     alert("formatted address: " + formatted_address +
-                     "\npostal code: " + postal_code + "\n" +
-                     "city : " + city + "\n" +
-                     "state : " + state_region + "\n" +
-                     "country : " + country + "\n" +
-                     "latitude : " + lat + "\n" +
-                     "longitude : " + lng
-                     );
-                     */
-
-                    // set address in location field
-                    //$("#hdr_src_l").val(city + ", " + state_region);
                 } else {
                     alert("Geocode was not successful for the following reason: " + status);
                 }
             });
         }
     }
-
 
     this.addMarkerByAddress = function (address) {
 
@@ -258,28 +261,11 @@ locjs.geo.geoService = function () {
             return null;
         }
     }
-
-    // get saved location
-    var getSavedLocation_Result = function (result) {
-    }
-
-    var getSavedLocation_Error = function (xhr) {
-        processAjaxError(xhr);
-    }
-
-    this.getSavedLocation = function (newLocation) {
-        postJSONtoMVC("/session/getLocationCookie",
-            {},
-            getSavedLocation_Result,
-            getSavedLocation_Error
-        );
-    }
-
 }
 
 locjs.geo.locationService = function() {
 
-    var currentPosition = new geo_location();
+    var currentPosition = new locjs.geo.location();
 
     var handleNoGeolocation = function (errorFlag, error) {
         if (errorFlag == true) {
@@ -299,7 +285,7 @@ locjs.geo.locationService = function() {
             currentPosition.longitude = position.longitude;
             setLocationQuery(currentPosition);
             return currentPosition;
-        };
+        }
     }
 
     // Google Gears Geolocation
@@ -346,14 +332,42 @@ locjs.geo.locationService = function() {
     }
 }
 
+
 /* Utils
  -----------------------------------*/
 
 locjs.utils = {
+
+    processAjaxError: function (xhr) {
+        // implement code to log errors
+        console.log(xhr);
+
+        return;
+    },
+
+    // old school debugging useful for mobile browser: reveals all properties of an object through confirm method (ok/cancel)
+    dumpProps: function (obj, parent) {
+        // Go through all the properties of the passed-in object
+        for (var i in obj) {
+            // if a parent (2nd parameter) was passed in, then use that to
+            // build the message. Message includes i (the object's property name)
+            // then the object's property value on a new line
+            if (parent) { var msg = parent + "." + i + "\n" + obj[i]; } else { var msg = i + "\n" + obj[i]; }
+            // Display the message. If the user clicks "OK", then continue. If they
+            // click "CANCEL" then quit this level of recursion
+            if (!confirm(msg)) { return; }
+            // If this property (i) is an object, then recursively process the object
+            if (typeof obj[i] == "object") {
+                if (parent) { dumpProps(obj[i], parent + "." + i); } else { dumpProps(obj[i], i); }
+            }
+        }
+    },
+
     getGoogleMapsUrl: function (address) {
         var formatted_address = escape(address.replace(' ', '+'));
         return 'https://maps.google.com/maps?f=q&amp;source=s_q&amp;hl=en&amp;geocode=&amp;q=' + formatted_address + '&amp;aq=0&amp;ie=UTF8&amp;z=12&amp;output=embed';
     },
+
     getDistance: function () {
         var rad = function (x) { return x * Math.PI / 180; }
 
